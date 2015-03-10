@@ -94,18 +94,20 @@ class Generator {
 		return Math.sqrt(Math.pow(str, 2) + Math.pow(fwd, 2));
 	}
 
-	private static void calculate(double distance, double accelMax,
+	private static double calculate(double distance, double accelMax,
 			double cruiseVelocity) {
 
 		ArrayList<Double> vel = new ArrayList<Double>();
 		vel.add(0.0);
 		ArrayList<Double> pos = new ArrayList<Double>();
 		pos.add(0.0);
+		ArrayList<Double> accel = new ArrayList<Double>();
+		accel.add(0.0);
 
 		double t = 0;
 
-		final double n = (distance / cruiseVelocity) / tick;
 		final double ramptime = cruiseVelocity / accelMax;
+		final double n = (distance / cruiseVelocity + ramptime) / tick;
 
 		ArrayList<Double> filter1 = new ArrayList<Double>();
 		filter1.add(0.0);
@@ -113,13 +115,19 @@ class Generator {
 		filter2.add(0.0);
 		final int filterconst = (int) Math.round(ramptime / tick + .5);
 
+		System.out.println("\tVeloctiy\t||\tPosition\tAcceleration");
+		System.out.println("\t0.0\t||\t0.0\t0.0");
+
 		for (int step = 1; Math.abs(pos.get(step - 1)) + 0.1 < Math
 				.abs(distance); step++) {
 
 			t += (step - 1) * tick;
 			int in = (step < (n + 2) ? 1 : 0);
-			filter1.add(Math.max(0, Math.min(1, filter1.get(step - 1)
-					+ (in == 1 ? 1.0 / filterconst : -1.0 / filterconst))));
+			filter1.add(Math.max(
+					0,
+					Math.min(1, 
+							 filter1.get(step - 1) + (in == 1 ? 1.0 : -1.0)
+							 / filterconst)));
 
 			double sum = 0;
 			for (int step2 = -1 * Math.min(filterconst, step); step2 + step < 1; step2++) {
@@ -127,17 +135,14 @@ class Generator {
 			}
 			filter2.add(sum);
 
-			vel.add(10 * filter1.get(step) + filter2.get(step) / (1 + filterconst)
+			vel.add((filter1.get(step) + filter2.get(step)) / (1 + filterconst)
 					* cruiseVelocity);
-			pos.add(10* (vel.get(step) + vel.get(step - 1)) / 2 * tick
+			pos.add((vel.get(step) + vel.get(step - 1)) / 2 * tick
 					+ pos.get(step - 1));
+			accel.add((vel.get(step) - vel.get(step - 1)) / tick);
 
-			try {
-				System.out.println("\t" + vel.get(step) + "\t" + pos.get(step)
-						+ "\t||\t" + dis.readDouble());
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
+			System.out.println("\t" + vel.get(step) + "\t||\t" + pos.get(step)
+					+ "\t" + accel.get(step));
 
 			try {
 				dos.writeDouble(vel.get(step));
@@ -148,6 +153,8 @@ class Generator {
 
 		}
 
+		System.out.println("\t" + t);
 		System.out.println("... successfully");
+		return t;
 	}
 }

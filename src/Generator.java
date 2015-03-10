@@ -72,13 +72,6 @@ class Generator {
 		System.out.println("drivetrain length (in)");
 		double l = scan.nextDouble();
 
-		try {
-			dos.writeDouble(theta);
-			// dos.writeChars("\n");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
 		return theta * Math.PI / 180.0
 				* Math.sqrt(Math.pow(w, 2) + Math.pow(l, 2));
 	}
